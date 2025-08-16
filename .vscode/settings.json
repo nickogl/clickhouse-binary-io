@@ -1,0 +1,9 @@
+{
+  "[csharp]": {
+    "editor.defaultFormatter": "ms-dotnettools.csharp",
+    "editor.formatOnSave": true,
+  },
+  "dotnet.formatting.organizeImportsOnFormat": true,
+  "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
+  "dotnet.defaultSolution": "clickhouse-binary-serialization.sln",
+}
