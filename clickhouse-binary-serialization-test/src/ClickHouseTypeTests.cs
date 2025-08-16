@@ -122,4 +122,28 @@ public class ClickHouseTypeTests
 		Assert.Null(type.NestedTypes[0].NestedTypes[2].NestedTypes[0].NestedTypes[1].PrecisionOrLength);
 		Assert.Empty(type.NestedTypes[0].NestedTypes[2].NestedTypes[0].NestedTypes[1].NestedTypes);
 	}
+
+	[Theory]
+	[InlineData("JSON")]
+	[InlineData("Variant")]
+	[InlineData("Map")]
+	[InlineData("BFloat16")]
+	[InlineData("Array")]
+	[InlineData("Array()")]
+	[InlineData("Array(Int8")]
+	[InlineData("Array(Int8, String)")]
+	[InlineData("Nullable")]
+	[InlineData("Nullable()")]
+	[InlineData("Nullable(Bool")]
+	[InlineData("Nullable(String, UInt32)")]
+	[InlineData("Tuple")]
+	[InlineData("Tuple()")]
+	[InlineData("Tuple(DateTime)")]
+	[InlineData("Tuple(field Date")]
+	[InlineData("Tuple(field Date,)")]
+	[InlineData("Tuple(field UInt16(String))")]
+	public void RejectsInvalidOrUnsupportedTypes(string name)
+	{
+		Assert.Throws<ClickHouseTypeParseException>(() => ClickHouseType.Parse(name));
+	}
 }

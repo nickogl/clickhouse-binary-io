@@ -22,7 +22,7 @@ public sealed class ClickHouseType
 	/// Parse a ClickHouse type by name. The type may be a nested type.
 	/// </summary>
 	/// <param name="name">Name of the type. E.g. Array(Tuple(Int8, FixedString(2)))</param>
-	/// <exception cref="ArgumentException">Unsupported or wrongly formatted type.</exception>
+	/// <exception cref="ClickHouseTypeParseException">Unsupported or wrongly formatted type.</exception>
 	/// <returns>The parsed type plus nested types if applicable.</returns>
 	public static ClickHouseType Parse(ReadOnlySpan<char> name)
 	{
@@ -33,7 +33,7 @@ public sealed class ClickHouseType
 
 	private static ClickHouseType ParseInternal(ref ReadOnlySpan<char> name)
 	{
-		// Quickly check for a simple type and return a precomputed instance.
+		// Quickly check for a simple type and return a precomputed instance
 		var nextTokenIndex = name.IndexOfAny(')', ',', ' ');
 		var maybeSimpleType = nextTokenIndex == -1 ? name : name[..nextTokenIndex];
 #if NET9_0_OR_GREATER
@@ -50,7 +50,7 @@ public sealed class ClickHouseType
 		}
 #endif
 
-		// Check if the type is one of those with a precision or length specifier.
+		// Check if the type is one of those with a precision or length specifier
 		if (name.StartsWith(FixedStringName, StringComparison.Ordinal))
 		{
 			name = name[FixedStringName.Length..];
@@ -72,7 +72,7 @@ public sealed class ClickHouseType
 			};
 		}
 
-		// Check if the type is a complex nested type.
+		// Check if the type is a complex nested type
 		if (name.StartsWith(NullableName, StringComparison.Ordinal))
 		{
 			name = name[NullableName.Length..];
@@ -101,7 +101,7 @@ public sealed class ClickHouseType
 			};
 		}
 
-		throw new ArgumentException($"Unsupported type '{name}'");
+		throw new ClickHouseTypeParseException($"Unsupported type '{name}'");
 	}
 
 	private static int ParsePrecisionOrLength(ref ReadOnlySpan<char> name, ReadOnlySpan<char> type, int? defaultValue = null)
@@ -112,19 +112,19 @@ public sealed class ClickHouseType
 			{
 				return defaultValue.Value;
 			}
-			throw new ArgumentException($"Type '{type}' requires a format, but none was provided", nameof(name));
+			throw new ClickHouseTypeParseException($"Type '{type}' requires a format, but none was provided");
 		}
 
 		// Support (<arg>) and (<arg1>, <arg2>, ...)
 		var endIndex = name.IndexOfAny(')', ',');
 		if (endIndex == -1)
 		{
-			throw new ArgumentException($"Type '{type}' has invalid format '{name}': Could not find closing parenthesis", nameof(name));
+			throw new ClickHouseTypeParseException($"Type '{type}' has invalid format '{name}': Could not find closing parenthesis");
 		}
 		var formatNumber = name[1..endIndex];
 		if (!int.TryParse(formatNumber, NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite, null, out var result))
 		{
-			throw new ArgumentException($"Type '{type}' has invalid format '{name}': Could not convert to an integer", nameof(name));
+			throw new ClickHouseTypeParseException($"Type '{type}' has invalid format '{name}': Could not convert to an integer");
 		}
 
 		// Skip remaining format arguments if needed
@@ -136,7 +136,7 @@ public sealed class ClickHouseType
 			endIndex = name.IndexOf(')');
 			if (endIndex++ == -1)
 			{
-				throw new ArgumentException($"Type '{type}' has invalid format '{originalName}': Missing closing paranthesis", nameof(name));
+				throw new ClickHouseTypeParseException($"Type '{type}' has invalid format '{originalName}': Missing closing paranthesis");
 			}
 			name = name[endIndex..];
 		}
@@ -147,15 +147,15 @@ public sealed class ClickHouseType
 	{
 		if (name.Length == 0 || name[0] != '(')
 		{
-			throw new ArgumentException($"Type '{parentType}' requires a single nested type, but none was provided", nameof(name));
+			throw new ClickHouseTypeParseException($"Type '{parentType}' requires a single nested type, but none was provided");
 		}
 		var originalName = name;
 		name = name[1..];
 
 		var result = ParseInternal(ref name);
-		if (name[0] != ')')
+		if (name.Length == 0 || name[0] != ')')
 		{
-			throw new ArgumentException($"Type '{parentType}' has invalid nested type '{originalName}': Missing closing paranthesis", nameof(name));
+			throw new ClickHouseTypeParseException($"Type '{parentType}' has invalid nested type '{originalName}': Missing closing paranthesis");
 		}
 		name = name[1..];
 		return result;
@@ -165,7 +165,7 @@ public sealed class ClickHouseType
 	{
 		if (name.Length == 0 || name[0] != '(')
 		{
-			throw new ArgumentException($"Type '{parentType}' requires nested types, but none were provided", nameof(name));
+			throw new ClickHouseTypeParseException($"Type '{parentType}' requires nested types, but none were provided");
 		}
 		var originalName = name;
 		name = name[1..];
@@ -175,14 +175,14 @@ public sealed class ClickHouseType
 		{
 			if (!SkipFieldName(ref name))
 			{
-				throw new ArgumentException($"Type '{parentType}' has invalid nested types '{originalName}': Every nested type must be preceded by its field name", nameof(name));
+				throw new ClickHouseTypeParseException($"Type '{parentType}' has invalid nested types '{originalName}': Every nested type must be preceded by its field name");
 			}
 
 			result.Add(ParseInternal(ref name));
 			var separatorOrEndIndex = name.IndexOfAny(',', ')');
 			if (separatorOrEndIndex == -1)
 			{
-				throw new ArgumentException($"Type '{parentType}' has invalid nested types '{originalName}': Missing closing paranthesis", nameof(name));
+				throw new ClickHouseTypeParseException($"Type '{parentType}' has invalid nested types '{originalName}': Missing closing paranthesis");
 			}
 			if (name[separatorOrEndIndex++] == ')')
 			{
@@ -195,6 +195,7 @@ public sealed class ClickHouseType
 
 	private static bool SkipFieldName(ref ReadOnlySpan<char> name)
 	{
+		// Supports "<field><whitespace><type>" and "<whitespace><field><whitespace><type>"
 		bool encounteredFieldName = false;
 		while (name.Length > 0)
 		{
