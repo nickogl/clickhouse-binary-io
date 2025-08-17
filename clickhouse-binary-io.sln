@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "clickhouse-binary-serialization-test", "clickhouse-binary-serialization-test\clickhouse-binary-serialization-test.csproj", "{BDFF4FE9-C2FF-4B1C-B130-88FCA47B72F7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "clickhouse-binary-io-test", "clickhouse-binary-io-test\clickhouse-binary-io-test.csproj", "{BDFF4FE9-C2FF-4B1C-B130-88FCA47B72F7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "clickhouse-binary-serialization", "clickhouse-binary-serialization\clickhouse-binary-serialization.csproj", "{FBECF81E-7512-44BC-8469-BFEBF9743EA0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "clickhouse-binary-io", "clickhouse-binary-io\clickhouse-binary-io.csproj", "{FBECF81E-7512-44BC-8469-BFEBF9743EA0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

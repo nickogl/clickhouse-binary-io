@@ -1,6 +1,6 @@
 #pragma warning disable CS1591
 
-namespace ClickHouse.IO;
+namespace ClickHouse.BinaryIO;
 
 /// <summary>
 /// ClickHouse type names (without nesting and formats) supported by this library.

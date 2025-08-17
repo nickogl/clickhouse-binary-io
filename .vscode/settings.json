@@ -5,5 +5,5 @@
   },
   "dotnet.formatting.organizeImportsOnFormat": true,
   "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
-  "dotnet.defaultSolution": "clickhouse-binary-serialization.sln",
+  "dotnet.defaultSolution": "clickhouse-binary-io.sln",
 }

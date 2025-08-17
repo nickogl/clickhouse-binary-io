@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 
-namespace ClickHouse.IO;
+namespace ClickHouse.BinaryIO;
 
 /// <summary>
 /// Represents a ClickHouse data type with potential nested data types.

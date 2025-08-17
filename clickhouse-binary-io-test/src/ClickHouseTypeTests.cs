@@ -1,4 +1,4 @@
-namespace ClickHouse.IO.Test;
+namespace ClickHouse.BinaryIO.Test;
 
 public class ClickHouseTypeTests
 {

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
-    <RootNamespace>ClickHouse.IO.Test</RootNamespace>
+    <RootNamespace>ClickHouse.BinaryIO.Test</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\clickhouse-binary-serialization\clickhouse-binary-serialization.csproj" />
+    <ProjectReference Include="..\clickhouse-binary-io\clickhouse-binary-io.csproj" />
   </ItemGroup>
 
 </Project>

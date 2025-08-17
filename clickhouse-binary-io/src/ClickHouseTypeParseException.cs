@@ -1,4 +1,4 @@
-namespace ClickHouse.IO;
+namespace ClickHouse.BinaryIO;
 
 /// <summary>
 /// Thrown when parsing a ClickHouse type from a string failed.
