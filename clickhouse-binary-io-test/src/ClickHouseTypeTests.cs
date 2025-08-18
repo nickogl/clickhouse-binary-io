@@ -51,6 +51,17 @@ public class ClickHouseTypeTests
 		Assert.Empty(type.NestedTypes);
 	}
 
+	[Theory]
+	[InlineData("Time64", 3)]
+	[InlineData("Time64(4)", 4)]
+	public void ParsesTime64(string name, int expectedPrecision)
+	{
+		var type = ClickHouseType.Parse(name);
+		Assert.Equal(ClickHouseTypeName.Time64, type.Name);
+		Assert.Equal(expectedPrecision, type.PrecisionOrLength);
+		Assert.Empty(type.NestedTypes);
+	}
+
 	[Fact]
 	public void ParsesNullable()
 	{

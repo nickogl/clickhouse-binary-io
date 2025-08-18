@@ -71,6 +71,16 @@ public sealed class ClickHouseType
 				PrecisionOrLength = ParsePrecisionOrLength(ref name, DateTime64Name, defaultValue: 3),
 			};
 		}
+		if (name.StartsWith(Time64Name, StringComparison.Ordinal))
+		{
+			name = name[Time64Name.Length..];
+			return new ClickHouseType()
+			{
+				Name = ClickHouseTypeName.Time64,
+				NestedTypes = [],
+				PrecisionOrLength = ParsePrecisionOrLength(ref name, Time64Name, defaultValue: 3),
+			};
+		}
 
 		// Check if the type is a complex nested type
 		if (name.StartsWith(NullableName, StringComparison.Ordinal))
@@ -222,6 +232,7 @@ public sealed class ClickHouseType
 
 	private const string FixedStringName = "FixedString";
 	private const string DateTime64Name = "DateTime64";
+	private const string Time64Name = "Time64";
 	private const string NullableName = "Nullable";
 	private const string ArrayName = "Array";
 	private const string TupleName = "Tuple";
