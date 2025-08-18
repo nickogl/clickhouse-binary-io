@@ -94,9 +94,11 @@ public class ClickHouseTypeTests
 		Assert.Null(type.PrecisionOrLength);
 		Assert.Equal(2, type.NestedTypes.Count);
 		Assert.Equal(ClickHouseTypeName.Int16, type.NestedTypes[0].Name);
+		Assert.Equal("a", type.NestedTypes[0].FieldName);
 		Assert.Null(type.NestedTypes[0].PrecisionOrLength);
 		Assert.Empty(type.NestedTypes[0].NestedTypes);
 		Assert.Equal(ClickHouseTypeName.String, type.NestedTypes[1].Name);
+		Assert.Equal("b", type.NestedTypes[1].FieldName);
 		Assert.Null(type.NestedTypes[1].PrecisionOrLength);
 		Assert.Empty(type.NestedTypes[1].NestedTypes);
 	}
@@ -156,5 +158,12 @@ public class ClickHouseTypeTests
 	public void RejectsInvalidOrUnsupportedTypes(string name)
 	{
 		Assert.Throws<ClickHouseTypeParseException>(() => ClickHouseType.Parse(name));
+	}
+
+	[Fact]
+	public void ConvertsToClickHouseTypeString()
+	{
+		var type = "Array(Tuple(a Nullable(FixedString(2)), b UInt64, c Array(Tuple(d DateTime, e Float32))))";
+		Assert.Equal(type, ClickHouseType.Parse(type).ToString());
 	}
 }
