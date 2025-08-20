@@ -28,7 +28,7 @@ namespace ClickHouse.BinaryIO;
 /// </remarks>
 public sealed class ClickHouseBinaryReader : IDisposable
 {
-	private readonly static DateOnly DateStartingPoint = DateOnly.FromDateTime(DateTime.UnixEpoch);
+	private readonly static DateOnly DateReferencePoint = DateOnly.FromDateTime(DateTime.UnixEpoch);
 
 	private ClickHouseBinaryReaderOptions _options;
 	private Stream _stream;
@@ -272,7 +272,7 @@ public sealed class ClickHouseBinaryReader : IDisposable
 	}
 
 	/// <summary>
-	/// Read a floating point number with single precision from the result set.
+	/// Read a floating-point number with single precision from the result set.
 	/// </summary>
 	public float ReadFloat32()
 	{
@@ -282,7 +282,7 @@ public sealed class ClickHouseBinaryReader : IDisposable
 	}
 
 	/// <summary>
-	/// Read a floating point number with double precision from the result set.
+	/// Read a floating-point number with double precision from the result set.
 	/// </summary>
 	public double ReadFloat64()
 	{
@@ -380,7 +380,7 @@ public sealed class ClickHouseBinaryReader : IDisposable
 		AssertColumnType(ClickHouseTypeName.Date);
 
 		var daysSinceEpoch = ReadUInt16();
-		return DateStartingPoint.AddDays(daysSinceEpoch);
+		return DateReferencePoint.AddDays(daysSinceEpoch);
 	}
 
 	/// <summary>
@@ -390,9 +390,9 @@ public sealed class ClickHouseBinaryReader : IDisposable
 	{
 		AssertColumnType(ClickHouseTypeName.Date32);
 
-		// This can be negative for representing dates prior to 1900-01-01
+		// This can be negative for representing dates prior to 1970-01-01
 		var daysSinceEpoch = ReadInt32();
-		return DateStartingPoint.AddDays(daysSinceEpoch);
+		return DateReferencePoint.AddDays(daysSinceEpoch);
 	}
 
 	/// <summary>
@@ -416,7 +416,9 @@ public sealed class ClickHouseBinaryReader : IDisposable
 	/// <remarks>
 	/// ClickHouse supports nanosecond resolution while <see cref="DateTime"/>'s
 	/// resolution is only 100 nanoseconds. So if a <paramref name="precision"/>
-	/// of 8 or 9 is used, some information will be lost.
+	/// of 8 or 9 is used, some information will be lost. If this is unacceptable,
+	/// consider using <see cref="ReadInt64"/> and decode the value according to
+	/// the documentation: https://clickhouse.com/docs/sql-reference/data-types/datetime64
 	/// </remarks>
 	public DateTime ReadDateTime64(int precision = 3)
 	{
@@ -460,7 +462,9 @@ public sealed class ClickHouseBinaryReader : IDisposable
 	/// <remarks>
 	/// ClickHouse supports nanosecond resolution while <see cref="TimeSpan"/>'s
 	/// resolution is only 100 nanoseconds. So if a <paramref name="precision"/>
-	/// of 8 or 9 is used, some information will be lost.
+	/// of 8 or 9 is used, some information will be lost. If this is unacceptable,
+	/// consider using <see cref="ReadInt64"/> and decode the value according to
+	/// the documentation: https://clickhouse.com/docs/sql-reference/data-types/time64
 	/// </remarks>
 	public TimeSpan ReadTime64(int precision = 3)
 	{
@@ -656,7 +660,8 @@ public sealed class ClickHouseBinaryReader : IDisposable
 	{
 		EnsureAvailable(1);
 
-		var u8 = GetRemainingSpanUnsafe(1)[0];
+		var span = GetRemainingSpanUnsafe(1);
+		var u8 = Unsafe.ReadUnaligned<byte>(ref MemoryMarshal.GetReference(span));
 		_position++;
 		return u8;
 	}
@@ -772,8 +777,10 @@ Expected precision or length {nextColumn.Type.PrecisionOrLength} for type {nextC
 but provided precision or length {precisionOrLength?.ToString() ?? "<null>"} instead.
 Make sure you use the same precision or length that you specified when creating the table.");
 
-		// We allow the user to sidestep some type-specific methods to avoid allocations
-		bool isException = type == ClickHouseTypeName.UInt32 && nextColumn.Type.Name == ClickHouseTypeName.IPv4;
+		// We allow sidestepping some type-specific methods to avoid allocations or inaccuracies
+		bool isException = (type == ClickHouseTypeName.UInt32 && nextColumn.Type.Name == ClickHouseTypeName.IPv4)
+			|| (type == ClickHouseTypeName.Int64 && nextColumn.Type.Name == ClickHouseTypeName.DateTime64)
+			|| (type == ClickHouseTypeName.Int64 && nextColumn.Type.Name == ClickHouseTypeName.Time64);
 		Debug.Assert(isException || nextColumn.Type.Name == type, @$"
 Column: {nextColumn.Name} {nextColumn.Type.Root}
 {new string('-', 80)}
@@ -860,11 +867,7 @@ Did you forget to consume a column prior to this one?");
 		}
 	}
 #else
-	private void AssertColumnType(ClickHouseTypeName? type, int? precisionOrLength = null)
-	{
-	}
-
-	private void AddVariableLengthColumnDiagnostics(int length)
+	private void AssertColumnType(ClickHouseTypeName? type, int? precisionOrLength = null, int? variableLength = null)
 	{
 	}
 #endif
