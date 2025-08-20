@@ -682,7 +682,7 @@ public sealed class ClickHouseBinaryReader : IDisposable
 			messageBuilder.AppendLine(new string('-', 80));
 		}
 #endif
-		messageBuilder.AppendLine("Required {count} bytes, but could only read {totalRead}. Did you forget to consume a column?");
+		messageBuilder.AppendLine($"Required {count} bytes, but could only read {totalRead}. Did you forget to consume a column?");
 		messageBuilder.AppendLine("Make sure to cast results of sum() to a fixed type or use sumOverflow() to have deterministic column sizes.");
 		throw new EndOfStreamException(messageBuilder.ToString());
 	}

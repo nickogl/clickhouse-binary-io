@@ -9,7 +9,7 @@ public class ClickHouseBinaryReaderTests : ClickHouseDatabaseTestBase
 	{
 		using var response = await ExecuteClickHouseQueryAsync("SELECT * FROM test ORDER BY u8 FORMAT RowBinaryWithNamesAndTypes");
 		var stream = await response.Content.ReadAsStreamAsync();
-		var options = new ClickHouseBinaryReaderOptions() { Buffer = new byte[4096] };
+		var options = new ClickHouseBinaryReaderOptions() { Buffer = new byte[256] };
 		using var reader = new ClickHouseBinaryReader(stream, options);
 
 		var columns = await reader.ReadColumnsAsync();
