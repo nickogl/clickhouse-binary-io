@@ -278,7 +278,7 @@ public sealed class ClickHouseBinaryWriter : IDisposable, IAsyncDisposable
 	public void WriteString(ReadOnlySpan<char> value, Encoding encoding)
 	{
 		var byteLength = encoding.GetByteCount(value);
-		_position += WriteVarint(byteLength);
+		WriteVarint(byteLength);
 		EnsureAvailable(byteLength);
 
 		_position += encoding.GetBytes(value, GetRemainingSpanUnsafe(byteLength));
@@ -545,7 +545,7 @@ public sealed class ClickHouseBinaryWriter : IDisposable, IAsyncDisposable
 	/// </remarks>
 	public void WriteArrayLength(int length)
 	{
-		_position += WriteVarint(length);
+		WriteVarint(length);
 	}
 
 	/// <summary>
@@ -584,7 +584,7 @@ public sealed class ClickHouseBinaryWriter : IDisposable, IAsyncDisposable
 		_position++;
 	}
 
-	private int WriteVarint(int value)
+	private void WriteVarint(int value)
 	{
 		// Despite us writing an unsigned LEB128, we are working with signed 32-bit
 		// numbers for convenience. No length will ever exceed int.MaxValue anyway.
@@ -594,15 +594,12 @@ public sealed class ClickHouseBinaryWriter : IDisposable, IAsyncDisposable
 		// maximum are available so we do not have to perform a check every iteration.
 		EnsureAvailable(sizeof(uint));
 
-		int written = 1;
 		while (value > 0x7f)
 		{
 			WriteByteUnsafe((byte)(value | ~0x7f));
 			value >>= 7;
-			written++;
 		}
 		WriteByteUnsafe((byte)value);
-		return written;
 	}
 
 	private void EnsureAvailable(int count)
