@@ -294,17 +294,50 @@ public sealed class ClickHouseBinaryReader : IDisposable
 	/// <summary>
 	/// Read a variable-length string from the result set.
 	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// The string is decoded with UTF-8 without BOM. Use <see cref="ReadString(Encoding)"/>
+	/// to decode the string with a different encoding.
+	/// </para>
+	/// <para>
+	/// This allocates a string. Use <see cref="ReadString(Span{char})"/> if this is not desired.
+	/// </para>
+	/// </remarks>
+	public string ReadString()
+	{
+		return ReadString(Encoding.Default);
+	}
+
+	/// <summary>
+	/// Read a variable-length string from the result set.
+	/// </summary>
 	/// <param name="encoding">
 	/// Encoding used to decode the string. This should be the same encoding that was
 	/// orginally used for writing the string. Defaults to UTF8 without BOM.
 	/// </param>
-	/// <remarks>This allocates a string. Use <see cref="ReadString(Span{char}, Encoding)"/> if this is not desired.</remarks>
-	public string ReadString(Encoding? encoding = null)
+	/// <remarks>
+	/// This allocates a string. Use <see cref="ReadString(Span{char}, Encoding)"/> if this is not desired.
+	/// </remarks>
+	public string ReadString(Encoding encoding)
 	{
 		var length = ReadVarint();
 		AssertColumnType(ClickHouseTypeName.String, variableLength: length);
 
-		return ReadFixedString(length, encoding ?? Encoding.Default);
+		return ReadFixedString(length, encoding);
+	}
+
+	/// <summary>
+	/// Read a variable-length string from the result set into the given span.
+	/// </summary>
+	/// <param name="destination">Span to write decoded characters into.</param>
+	/// <remarks>
+	/// The string is decoded with UTF-8 without BOM. Use <see cref="ReadString(Span{char}, Encoding)"/>
+	/// to decode the string with a different encoding.
+	/// </remarks>
+	/// <returns>The amount of characters written into <paramref name="destination"/>.</returns>
+	public int ReadString(Span<char> destination)
+	{
+		return ReadString(destination, Encoding.Default);
 	}
 
 	/// <summary>
@@ -316,12 +349,30 @@ public sealed class ClickHouseBinaryReader : IDisposable
 	/// orginally used for writing the string. Defaults to UTF8 without BOM.
 	/// </param>
 	/// <returns>The amount of characters written into <paramref name="destination"/>.</returns>
-	public int ReadString(Span<char> destination, Encoding? encoding = null)
+	public int ReadString(Span<char> destination, Encoding encoding)
 	{
 		var length = ReadVarint();
 		AssertColumnType(ClickHouseTypeName.String, variableLength: length);
 
-		return ReadFixedString(length, destination, encoding ?? Encoding.Default);
+		return ReadFixedString(length, destination, encoding);
+	}
+
+	/// <summary>
+	/// Read a fixed-length string from the result set.
+	/// </summary>
+	/// <param name="byteLength">Length of the string in bytes.</param>
+	/// <remarks>
+	/// <para>
+	/// The string is decoded with ASCII. Use <see cref="ReadFixedString(int, Encoding)"/>
+	/// to decode the string with a different encoding.
+	/// </para>
+	/// <para>
+	/// This allocates a string. Use <see cref="ReadFixedString(int, Span{char})"/> if this is not desired.
+	/// </para>
+	/// </remarks>
+	public string ReadFixedString(int byteLength)
+	{
+		return ReadFixedString(byteLength, Encoding.ASCII);
 	}
 
 	/// <summary>
@@ -330,7 +381,7 @@ public sealed class ClickHouseBinaryReader : IDisposable
 	/// <param name="byteLength">Length of the string in bytes.</param>
 	/// <param name="encoding">
 	/// Encoding to use to decode the string. This should be the same encoding that
-	/// was orginally used for writing the string into the column. Defaults to ASCII.
+	/// was orginally used for writing the string into the column.
 	/// </param>
 	/// <remarks>
 	/// <para>
@@ -342,12 +393,12 @@ public sealed class ClickHouseBinaryReader : IDisposable
 	/// This allocates a string. Use <see cref="ReadFixedString(int, Span{char}, Encoding)"/> if this is not desired.
 	/// </para>
 	/// </remarks>
-	public string ReadFixedString(int byteLength, Encoding? encoding = null)
+	public string ReadFixedString(int byteLength, Encoding encoding)
 	{
 		AssertColumnType(ClickHouseTypeName.FixedString, byteLength);
 		EnsureAvailable(byteLength);
 
-		var str = (encoding ?? Encoding.ASCII).GetString(GetRemainingSpanUnsafe(byteLength));
+		var str = encoding.GetString(GetRemainingSpanUnsafe(byteLength));
 		_position += byteLength;
 		return str;
 	}
@@ -357,17 +408,37 @@ public sealed class ClickHouseBinaryReader : IDisposable
 	/// </summary>
 	/// <param name="byteLength">Length of the string in bytes.</param>
 	/// <param name="destination">Span to write decoded characters into.</param>
+	/// <remarks>
+	/// The string is decoded with ASCII. Use <see cref="ReadFixedString(int, Encoding)"/>
+	/// to decode the string with a different encoding.
+	/// </remarks>
+	/// <returns>The amount of characters written into <paramref name="destination"/>.</returns>
+	public int ReadFixedString(int byteLength, Span<char> destination)
+	{
+		return ReadFixedString(byteLength, destination, Encoding.ASCII);
+	}
+
+	/// <summary>
+	/// Read a fixed-length string from the result set.
+	/// </summary>
+	/// <param name="byteLength">Length of the string in bytes.</param>
+	/// <param name="destination">Span to write decoded characters into.</param>
 	/// <param name="encoding">
 	/// Encoding to use to decode the string. This should be the same encoding that
-	/// was orginally used for writing the string into the column. Defaults to ASCII.
+	/// was orginally used for writing the string into the column.
 	/// </param>
+	/// <remarks>
+	/// ClickHouse does not have the concept of an encoding, therefore the length of
+	/// a FixedString is always the length in bytes, not characters or code points.
+	/// Make sure to use a fixed-width encoding (e.g. ASCII) for FixedString.
+	/// </remarks>
 	/// <returns>The amount of characters written into <paramref name="destination"/>.</returns>
-	public int ReadFixedString(int byteLength, Span<char> destination, Encoding? encoding = null)
+	public int ReadFixedString(int byteLength, Span<char> destination, Encoding encoding)
 	{
 		AssertColumnType(ClickHouseTypeName.FixedString, byteLength);
 		EnsureAvailable(byteLength);
 
-		var written = (encoding ?? Encoding.ASCII).GetChars(GetRemainingSpanUnsafe(byteLength), destination);
+		var written = encoding.GetChars(GetRemainingSpanUnsafe(byteLength), destination);
 		_position += byteLength;
 		return written;
 	}
