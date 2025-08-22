@@ -2,6 +2,14 @@
 
 A fast, zero-dependency, near zero-allocation library for reading and writing large volumes of ClickHouse data in .NET.
 
+[![NuGet Version](https://img.shields.io/nuget/v/ClickHouse.BinaryIO)](https://www.nuget.org/packages/ClickHouse.BinaryIO/1.0.0)
+
+## Installation
+
+```sh
+dotnet add package ClickHouse.BinaryIO
+```
+
 ## Usage
 
 ### Writing data
