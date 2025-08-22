@@ -163,7 +163,7 @@ public class ClickHouseTypeTests
 	[Fact]
 	public void ConvertsToClickHouseTypeString()
 	{
-		var type = "Array(Tuple(a Nullable(FixedString(2)), b UInt64, c Array(Tuple(d DateTime, e Float32))))";
+		var type = "Array(Tuple(a Nullable(FixedString(2)), b UInt64, c Array(Tuple(d DateTime, ef Float32))))";
 		Assert.Equal(type, ClickHouseType.Parse(type).ToString());
 	}
 }

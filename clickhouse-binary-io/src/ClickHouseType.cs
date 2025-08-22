@@ -268,7 +268,7 @@ public sealed class ClickHouseType
 					return originalName[fieldNameStart..i];
 				}
 			}
-			else if (ch != ',' && ch != '(' && ch != ')')
+			else if (fieldNameStart == -1 && ch != ',' && ch != '(' && ch != ')')
 			{
 				fieldNameStart = i;
 			}
