@@ -169,6 +169,24 @@ public class ClickHouseBinaryReaderTests : ClickHouseDatabaseTestBase
 		Assert.Equal((3, (5, "tuple_b")), rows[1].Tuple);
 	}
 
+	[Fact]
+	public async Task ReadsEmptyResultSet()
+	{
+		await ExecuteClickHouseQueryAsync("TRUNCATE test");
+
+		using var response = await ExecuteClickHouseQueryAsync("SELECT * FROM test FORMAT RowBinary");
+		var stream = await response.Content.ReadAsStreamAsync();
+		var options = new ClickHouseBinaryReaderOptions() { Buffer = new byte[256] };
+		using var reader = new ClickHouseBinaryReader(stream, options);
+
+		int rows = 0;
+		while (!await reader.IsCompleteAsync())
+		{
+			rows++;
+		}
+		Assert.Equal(0, rows);
+	}
+
 	public override async Task InitializeAsync()
 	{
 		await base.InitializeAsync();
