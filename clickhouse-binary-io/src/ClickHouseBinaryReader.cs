@@ -170,12 +170,12 @@ public sealed class ClickHouseBinaryReader : IDisposable
 		// a non-blocking read should it not fit.
 		var lastRowSize = _position - _lastRowPosition;
 		_lastRowPosition = _position;
-		if (_available - _position >= lastRowSize)
+		if (_available > 0 && _available - _position >= lastRowSize)
 		{
 			return ValueTask.FromResult(false);
 		}
 
-		return CheckEndOfStreamAsync(lastRowSize, cancellationToken);
+		return CheckEndOfStreamAsync(cancellationToken);
 	}
 
 	/// <summary>
@@ -769,23 +769,17 @@ public sealed class ClickHouseBinaryReader : IDisposable
 			length);
 	}
 
-	private async ValueTask<bool> CheckEndOfStreamAsync(int lastRowSize, CancellationToken cancellationToken)
+	private async ValueTask<bool> CheckEndOfStreamAsync(CancellationToken cancellationToken)
 	{
-		int totalRead = 0;
-		while (totalRead < lastRowSize)
+		ResetBufferIfFull();
+
+		int read = await _stream.ReadAsync(_buffer.AsMemory(_available), cancellationToken);
+		if (read == 0)
 		{
-			ResetBufferIfFull();
-
-			int read = await _stream.ReadAsync(_buffer.AsMemory(_available), cancellationToken);
-			if (read == 0)
-			{
-				// It is only the end of the stream if we already consumed all available bytes
-				return _position >= _available;
-			}
-			_available += read;
-			totalRead += read;
+			// It is only the end of the stream if we already consumed all available bytes
+			return _position >= _available;
 		}
-
+		_available += read;
 		return false;
 	}
 
