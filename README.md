@@ -182,8 +182,8 @@ Use `ReadString` overloads that take a `Span<char>`.
 var stringBuffer = new char[128];
 while (!await reader.IsCompleteAsync(cancellationToken))
 {
-  reader.ReadString(stringBuffer);
-  // process stringBuffer
+  int length = reader.ReadString(stringBuffer);
+  // process stringBuffer[..length]
 }
 ```
 
